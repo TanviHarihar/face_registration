@@ -4,18 +4,23 @@ from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 import base64
 import os
+import cv2
+import numpy as np
 from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
 
-# Create directory to store images if not already present
+# --- Setup Directories and MongoDB ---
 os.makedirs("registered_faces", exist_ok=True)
 
-# MongoDB setup
 client = MongoClient("mongodb://localhost:27017/")
 db = client["face_login_db"]
 users_collection = db["users"]
+
+# Load Haar Cascade for Face Detection
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
 
 # --- Signup Route ---
 @app.route('/signup', methods=['POST'])
@@ -48,6 +53,7 @@ def signup():
         print("Signup error:", e)
         return jsonify({"message": "Internal server error"}), 500
 
+
 # --- Login Route ---
 @app.route('/login', methods=['POST'])
 def login():
@@ -71,12 +77,12 @@ def login():
         print("Login error:", e)
         return jsonify({"message": "Internal server error"}), 500
 
-# --- Face Registration Route (Only for Kids) ---
+
+# --- Face Registration (Only for Kids) ---
 @app.route('/register', methods=['POST'])
 def register_patient():
     try:
         data = request.get_json()
-
         full_name = data.get('fullName')
         email = data.get('email')
         dob = data.get('dob')
@@ -87,20 +93,47 @@ def register_patient():
         if not face_image_base64:
             return jsonify({'error': 'No face image provided'}), 400
 
-        # Decode and save the image
+        # Decode base64 image
         image_data = base64.b64decode(face_image_base64.split(',')[1])
+        nparr = np.frombuffer(image_data, np.uint8)
+        img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        # Detect face
+        gray = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+
+        if len(faces) == 0:
+            return jsonify({'error': 'No face detected. Please try again.'}), 400
+
+        # Save the image
         filename = f"{full_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
         image_path = os.path.join("registered_faces", filename)
-        with open(image_path, 'wb') as f:
-            f.write(image_data)
+        cv2.imwrite(image_path, img_np)
 
-        print(f"Registered patient: {full_name}, email: {email}, image saved at {image_path}")
+        # Update the existing user record with extra details
+        result = users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "dob": dob,
+                    "gender": gender,
+                    "location": location,
+                    "faceImagePath": image_path,
+                    "registeredAt": datetime.now()
+                }
+            }
+        )
+
+        if result.matched_count == 0:
+            return jsonify({'error': 'User not found. Please sign up first.'}), 400
 
         return jsonify({'message': 'Patient registered successfully', 'imagePath': image_path}), 200
 
     except Exception as e:
-        print("Error during registration:", e)
+        print("Face Registration Error:", e)
         return jsonify({'error': str(e)}), 500
 
+
+# --- Run Server ---
 if __name__ == '__main__':
     app.run(debug=True)
