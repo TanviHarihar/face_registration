@@ -2,53 +2,83 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
-  const [phone, setPhone] = useState('');
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate(); // 👈
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('Logging in with:', { phone, password });
+    try {
+      const response = await fetch('http://localhost:5000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Simulate login success and navigate
-    navigate('/register');
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Login successful!');
+
+        // Redirect based on role
+        if (data.role === 'Kid') {
+          navigate('/register'); // Face registration page
+        } else if (data.role === 'Parent') {
+          navigate('/parent-dashboard');
+        } else if (data.role === 'Doctor') {
+          navigate('/doctor-dashboard');
+        }
+      } else {
+        alert(data.message || 'Login failed');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      alert('An error occurred while logging in');
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-300 px-4">
-      <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg sm:px-8 md:px-10">
-        <h2 className="text-3xl font-bold mb-6 text-center text-blue-600">Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 to-pink-300 px-4">
+      <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
+        <h2 className="text-2xl font-bold mb-6 text-center text-pink-600">Login</h2>
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <label className="block text-sm font-medium mb-1">Email</label>
             <input
-              type="tel"
-              pattern="[0-9]{10}"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="Enter your 10-digit phone number"
+              className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium mb-1">Password</label>
             <input
               type="password"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="Enter your password"
+              className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
+            className="w-full bg-pink-600 text-white py-2 px-4 rounded-lg hover:bg-pink-700 transition"
           >
             Login
           </button>
+
+          <p className="text-sm text-center mt-4">
+            Don’t have an account?{' '}
+            <span
+              onClick={() => navigate('/signup')}
+              className="text-pink-500 hover:underline cursor-pointer"
+            >
+              Sign up here
+            </span>
+          </p>
         </form>
       </div>
     </div>

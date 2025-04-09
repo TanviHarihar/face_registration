@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Webcam from 'react-webcam';
+import axios from 'axios';
 
 const Register: React.FC = () => {
   const [fullName, setFullName] = useState('');
@@ -12,7 +13,12 @@ const Register: React.FC = () => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const handleFaceRegistration = () => {
-    setShowWebcam((prev) => !prev);
+    setShowWebcam((prev) => {
+      if (!prev) {
+        setCapturedImage(null);
+      }
+      return !prev;
+    });
   };
 
   const capture = () => {
@@ -26,12 +32,12 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     if (!capturedImage) {
       alert("Please capture a face before submitting.");
       return;
     }
-
+  
     const patientData = {
       fullName,
       email,
@@ -40,7 +46,7 @@ const Register: React.FC = () => {
       location,
       faceImage: capturedImage,
     };
-
+  
     try {
       const response = await fetch('http://localhost:5000/register', {
         method: 'POST',
@@ -49,11 +55,20 @@ const Register: React.FC = () => {
         },
         body: JSON.stringify(patientData),
       });
-
+  
       if (response.ok) {
         const data = await response.json();
         console.log('Server response:', data);
         alert('Patient registered successfully!');
+  
+        // ✅ Clear the form here
+        setFullName('');
+        setEmail('');
+        setDob('');
+        setGender('');
+        setLocation('');
+        setCapturedImage(null);
+        setShowWebcam(false);
       } else {
         console.error('Server error:', response.statusText);
         alert('Something went wrong during registration.');
@@ -62,7 +77,7 @@ const Register: React.FC = () => {
       console.error('Fetch error:', err);
       alert('Failed to connect to server.');
     }
-  };
+  };  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 to-green-300 px-4">
@@ -142,32 +157,46 @@ const Register: React.FC = () => {
             )}
 
             {capturedImage && (
-              <img
-                src={capturedImage}
-                alt="Captured"
-                className="w-32 h-32 object-cover rounded-full border-2 border-green-400"
-              />
-            )}
-
-            <div className="flex space-x-4">
-              <button
-                type="button"
-                onClick={handleFaceRegistration}
-                className="bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition"
-              >
-                {showWebcam ? 'Cancel' : 'Register Face'}
-              </button>
-
-              {showWebcam && (
+              <div className="flex flex-col items-center space-y-2">
+                <img
+                  src={capturedImage}
+                  alt="Captured"
+                  className="w-32 h-32 object-cover rounded-full border-2 border-green-400"
+                />
                 <button
                   type="button"
-                  onClick={capture}
-                  className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+                  onClick={() => {
+                    setCapturedImage(null);
+                    setShowWebcam(false);
+                  }}
+                  className="mt-2 text-sm text-red-500 hover:underline"
                 >
-                  Capture
+                  Remove Image
                 </button>
-              )}
-            </div>
+              </div>
+            )}
+
+            {!capturedImage && (
+              <div className="flex space-x-4 mt-2">
+                <button
+                  type="button"
+                  onClick={handleFaceRegistration}
+                  className="bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition"
+                >
+                  {showWebcam ? 'Cancel' : 'Register Face'}
+                </button>
+
+                {showWebcam && (
+                  <button
+                    type="button"
+                    onClick={capture}
+                    className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+                  >
+                    Capture
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <button
