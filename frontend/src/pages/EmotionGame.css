@@ -1,0 +1,65 @@
+.emotion-game-container {
+    max-width: 700px;
+    margin: 40px auto;
+    background: linear-gradient(135deg, #d8f3dc, #ffd6e0);
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    font-family: "Segoe UI", sans-serif;
+    text-align: center;
+  }
+  
+  .title {
+    font-size: 28px;
+    color: #4b0082;
+    margin-bottom: 10px;
+  }
+  
+  .subtitle {
+    font-size: 16px;
+    color: #444;
+    margin-bottom: 30px;
+  }
+  
+  .match-columns {
+    display: flex;
+    flex-direction: row; /* Ensure side-by-side */
+    justify-content: center;
+    align-items: start;
+    gap: 40px;
+    flex-wrap: nowrap;  /* Prevent wrapping */
+  }
+  
+  
+  .emoji-column,
+  .word-column {
+    width: 50%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  
+  .emoji-box,
+  .word-box {
+    background-color: #e0bbf7;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  
+  .word-box:hover {
+    background-color: #d291ff;
+  }
+  
+  .score-section {
+    margin-top: 30px;
+    font-size: 18px;
+    color: #005f73;
+    font-weight: bold;
+  }
+  
